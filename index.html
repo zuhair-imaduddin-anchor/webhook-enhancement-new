@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prototype 2: Future State</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 30px; background-color: #f4f5f7; color: #333; }
+        h1 { text-align: center; color: #28a745; }
+        .grid { display: flex; gap: 20px; margin-top: 20px; }
+        .column { flex: 1; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .client-side { background-color: #ffffff; border-top: 5px solid #007bff; }
+        .backend-side { background-color: #343a40; color: #f8f9fa; border-top: 5px solid #28a745; }
+        .step { margin-bottom: 20px; padding: 15px; border-radius: 6px; position: relative; }
+        .client-side .step { background-color: #f8f9fa; border-left: 4px solid #007bff; }
+        .backend-side .step { background-color: #495057; border-left: 4px solid #28a745; }
+        .metrics { margin-top: 30px; padding: 20px; border-radius: 8px; background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .metrics h2 { margin-top: 0; }
+        .highlight { font-weight: bold; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+
+    <h1>Future State: Transfer Workflow</h1>
+    <p style="text-align: center;">With Transfer ID included in the webhook payload, enabling real-time correlation.</p>
+
+    <div class="grid">
+        <div class="column client-side">
+            <h2>Client Application</h2>
+            <div class="step">
+                <strong>1. Receive Webhook:</strong> <code>transfer.initiated</code><br>
+                <em>Action:</em> Parse payload. Extract <strong>both</strong> <code>transactionId</code> and <code>transferId</code> immediately.
+            </div>
+            <div class="step">
+                <strong>2. State Update:</strong> Update internal DB.<br>
+                <em>Action:</em> (Optional) Send <code>GET /v2/transfers/{transferId}</code> if extra metadata is needed.
+            </div>
+            <div class="step">
+                <strong>3. Receive Webhook 2:</strong> <code>transfer.completed</code><br>
+                <em>Action:</em> Parse payload. Extract <code>transferId</code>.
+            </div>
+            <div class="step">
+                <strong>4. Complete Workflow:</strong><br>
+                <em>Action:</em> Mark transfer as complete in local system. Zero reconciliation required.
+            </div>
+        </div>
+
+        <div class="column backend-side">
+            <h2>Backend API</h2>
+            <div class="step">
+                <strong>1. Fire Webhook:</strong><br>
+                <em>Action:</em> Send updated payload containing <code>transactionId</code> AND <code>transferId</code>.
+            </div>
+            <div class="step">
+                <strong>2. Process Request (Light):</strong><br>
+                <em>Action:</em> If client requests metadata, serve a highly efficient, indexed point-lookup by ID.
+            </div>
+            <div class="step">
+                <strong>3. Fire Webhook:</strong><br>
+                <em>Action:</em> Send updated payload containing <code>transactionId</code> AND <code>transferId</code>.
+            </div>
+            <div class="step">
+                <strong>4. No Action Required:</strong><br>
+                <em>Action:</em> Backend is completely free from unnecessary polling or heavy list queries.
+            </div>
+        </div>
+    </div>
+
+    <div class="metrics">
+        <h2>Impact Metrics (Per 1,000 Transfers)</h2>
+        <ul>
+            <li><strong>Total API Requests:</strong> <span class="highlight">0 to 2,000 max</span> (Down from 4,000). Clients can rely fully on webhooks or do 1 direct lookup.</li>
+            <li><strong>Rate Limiting Impact:</strong> <span class="highlight">MINIMAL.</span> 100% reduction in heavy <code>GET /v2/transfers</code> queries. Massive improvement in database performance and client UX.</li>
+        </ul>
+    </div>
+
+</body>
+</html>
