@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Future State: Sequential Ops</title>
+    <title>Future State: Webhook Event-Driven</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 30px; background-color: #f4f5f7; color: #333; }
         h1 { text-align: center; color: #28a745; }
@@ -18,77 +18,90 @@
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #28a745; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .status-text { color: #666; font-size: 0.9em; margin-bottom: 20px; min-height: 40px; }
-        .unlocked-note { background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; font-size: 0.85em; margin-top: auto; border: 1px solid #c3e6cb; display: none; }
+        .counter-box { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; border: 2px solid #c3e6cb; margin-top: 20px; width: 80%; font-weight: bold; font-size: 1.2em; display: none; }
+        .call-count { font-size: 1.8em; color: #28a745; }
 
-        /* API Flow */
-        .api-flow { flex: 1.5; background: #282c34; color: #abb2bf; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 10px; }
-        .api-step { padding: 12px; background: #3e4451; border-radius: 6px; border-left: 4px solid #5c6370; opacity: 0.4; transition: all 0.3s ease; }
-        .api-step.active { opacity: 1; border-left-color: #56b6c2; background: #4b5263; transform: translateX(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
-        .api-step.done { opacity: 0.8; border-left-color: #98c379; }
-        .api-step code { color: #61afef; font-size: 1.05em; display: block; margin-top: 5px; background: #222; padding: 4px; border-radius: 4px;}
-        .api-step .note { display: block; margin-top: 5px; font-size: 0.85em; color: #abb2bf; }
-        
+        /* Backend Flow */
+        .api-flow { flex: 1.5; background: #282c34; color: #abb2bf; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .backend-state { background: #3e4451; padding: 15px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 1.2em; color: #61afef; margin-bottom: 20px; border: 2px solid #5c6370; }
+        .log-window { flex: 1; background: #1e2227; border-radius: 6px; padding: 15px; overflow-y: auto; font-family: monospace; font-size: 0.9em; max-height: 400px; }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        .log-webhook { color: #56b6c2; font-weight: bold; background: #2c313a; padding: 4px; border-left: 3px solid #56b6c2;}
+        .log-state { color: #98c379; }
     </style>
 </head>
 <body>
 
-    <h1>Future State: The Seamless Sequence</h1>
+    <h1>Future State: Event-Driven Architecture</h1>
     
     <div class="grid">
         <div class="app-container">
             <div class="mobile-app">
                 <div style="font-weight: bold; color: #555;">Client Interface</div>
                 <div class="amount">15.50 BTC</div>
-                <div style="color: #888;">To: Anchorage Vault</div>
                 
-                <button class="btn" id="startBtn" onclick="runSimulation()">Initiate Transfer</button>
+                <button class="btn" id="startBtn" onclick="startWebhookSim()">Submit Transfer</button>
                 
                 <div class="spinner" id="spinner"></div>
-                <div class="status-text" id="statusText"></div>
+                <div id="statusText" style="color: #666; margin-top: 10px; font-weight:bold;"></div>
                 
-                <div class="unlocked-note" id="note">
-                    <strong>⚡ Instant Correlation:</strong> App resolved state instantly. Zero heavy API polling required.
+                <div class="counter-box" id="counterBox">
+                    API Calls Made:<br>
+                    <span class="call-count" id="callCount">0</span><br>
+                    <span style="font-size: 0.6em; color: #666;">(Waiting passively for webhook)</span>
                 </div>
             </div>
         </div>
 
-        <div class="api-flow" id="flowBox">
-            <h2 style="color: white; margin-top: 0; margin-bottom: 10px;">Backend Operations (Sequential)</h2>
-            <div class="api-step" id="step1"><strong>1. Webhook Received:</strong> <code>transfer.initiated<br>{"transactionId": "tx-123", "transferId": "transfer-999"}</code><span class="note">Payload complete. State updated instantly.</span></div>
-            <div class="api-step" id="step2"><strong>2. API Call 1 (Optional):</strong> <code>GET /v2/transfers/transfer-999</code><span class="note">Direct, lightweight point-lookup for metadata (0 array iterations).</span></div>
-            <div class="api-step" id="step3"><strong>3. Webhook Received:</strong> <code>transfer.completed<br>{"transactionId": "tx-123", "transferId": "transfer-999"}</code><span class="note">Payload complete. Client marks transfer complete instantly.</span></div>
-            <div class="api-step" id="step4"><strong>4. Final Resolution:</strong> <code>Status = Complete</code><span class="note">Zero GET /v2/transfers polling required.</span></div>
+        <div class="api-flow">
+            <h2 style="color: white; margin-top: 0; margin-bottom: 10px;">Backend Operations</h2>
+            <div class="backend-state" id="backendState">Transfer State: PENDING</div>
+            
+            <div style="color: white; margin-bottom: 5px; font-weight: bold;">System Event Log:</div>
+            <div class="log-window" id="logWindow"></div>
         </div>
     </div>
 
     <script>
-        const sleep = ms => new Promise(r => setTimeout(r, ms));
-        
-        async function runSimulation() {
+        function addLog(text, type) {
+            const log = document.getElementById('logWindow');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toISOString().split('T')[1].slice(0,-1);
+            entry.innerText = `[${time}] ${text}`;
+            log.prepend(entry);
+        }
+
+        function updateState(newState) {
+            document.getElementById('backendState').innerText = `Transfer State: ${newState}`;
+            addLog(`Backend state changed to: ${newState}`, 'log-state');
+        }
+
+        function startWebhookSim() {
             document.getElementById('startBtn').style.display = 'none';
             document.getElementById('spinner').style.display = 'block';
-            document.getElementById('note').style.display = 'block';
-            const status = document.getElementById('statusText');
+            document.getElementById('counterBox').style.display = 'block';
+            document.getElementById('statusText').innerText = "Listening for webhook...";
             
-            status.innerHTML = "<strong>Processing...</strong>";
-            
-            for(let i=1; i<=4; i++) {
-                const step = document.getElementById(`step${i}`);
-                if(i > 1) document.getElementById(`step${i-1}`).className = "api-step done";
+            document.getElementById('logWindow').innerHTML = '';
+            addLog("Transfer submitted. Returned transferId: tx-999", 'log-state');
+
+            // Simulate the backend slowly processing the transfer (NO client polling)
+            setTimeout(() => updateState("PROCESSING"), 3000);
+            setTimeout(() => updateState("BLOCKCHAIN_CONFIRMING"), 6000);
+            setTimeout(() => {
+                updateState("COMPLETED");
                 
-                step.className = "api-step active";
+                // Boom: Webhook fires
+                addLog(`[POST] Webhook transfer.completed fired! Payload includes: {"transferId": "tx-999"}`, 'log-webhook');
                 
-                // Rapid processing because no heavy queries are needed
-                await sleep(1000); 
-            }
-            
-            document.getElementById('step4').className = "api-step done";
-            document.getElementById('spinner').style.display = 'none';
-            status.innerHTML = "<span style='color: #28a745; font-size: 1.5em; font-weight: bold;'>✓ Success</span><br>Transfer resolved instantly.";
-            document.getElementById('startBtn').style.display = 'block';
-            document.getElementById('startBtn').innerText = 'Reset Simulation';
-            document.getElementById('startBtn').onclick = () => location.reload();
+                // UI updates instantly upon receiving webhook
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('statusText').innerHTML = "<span style='color: #28a745; font-size: 1.2em;'>✓ Transfer Complete</span>";
+                document.getElementById('startBtn').style.display = 'block';
+                document.getElementById('startBtn').innerText = 'Reset Simulation';
+                document.getElementById('startBtn').onclick = () => location.reload();
+            }, 10000);
         }
     </script>
 </body>
