@@ -3,75 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prototype 2: Future State</title>
+    <title>Future State: Seamless Experience</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 30px; background-color: #f4f5f7; color: #333; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 30px; background-color: #f4f5f7; color: #333; }
         h1 { text-align: center; color: #28a745; }
-        .grid { display: flex; gap: 20px; margin-top: 20px; }
-        .column { flex: 1; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .client-side { background-color: #ffffff; border-top: 5px solid #007bff; }
-        .backend-side { background-color: #343a40; color: #f8f9fa; border-top: 5px solid #28a745; }
-        .step { margin-bottom: 20px; padding: 15px; border-radius: 6px; position: relative; }
-        .client-side .step { background-color: #f8f9fa; border-left: 4px solid #007bff; }
-        .backend-side .step { background-color: #495057; border-left: 4px solid #28a745; }
+        .grid { display: flex; gap: 30px; margin-top: 20px; }
+        
+        /* App UI (Left Side) */
+        .app-container { flex: 1; display: flex; justify-content: center; }
+        .mobile-app { width: 320px; background: white; border-radius: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); border: 8px solid #333; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .app-header { font-size: 1.2em; font-weight: bold; margin-bottom: 20px; color: #555; }
+        .amount { font-size: 2em; font-weight: bold; margin: 20px 0; }
+        
+        /* Success Checkmark */
+        .success-icon { width: 50px; height: 50px; background-color: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 30px; margin: 15px auto; }
+        .status-text { color: #28a745; font-size: 1.1em; font-weight: bold; margin-bottom: 20px; }
+        .unlocked-note { background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; font-size: 0.85em; margin-top: auto; border: 1px solid #c3e6cb; }
+
+        /* API Flow (Right Side) */
+        .api-flow { flex: 1.5; background: #282c34; color: #abb2bf; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .api-step { margin-bottom: 15px; padding: 12px; background: #3e4451; border-radius: 6px; border-left: 4px solid #98c379; }
+        .api-step code { color: #61afef; font-size: 1.1em; }
+        .api-step .note { display: block; margin-top: 5px; font-size: 0.85em; color: #abb2bf; }
+        
+        /* Metrics */
         .metrics { margin-top: 30px; padding: 20px; border-radius: 8px; background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
-        .metrics h2 { margin-top: 0; }
-        .highlight { font-weight: bold; font-size: 1.2em; }
     </style>
 </head>
 <body>
 
-    <h1>Future State: Transfer Workflow</h1>
-    <p style="text-align: center;">With Transfer ID included in the webhook payload, enabling real-time correlation.</p>
-
+    <h1>Future State: Seamless Resolution</h1>
+    
     <div class="grid">
-        <div class="column client-side">
-            <h2>Client Application</h2>
-            <div class="step">
-                <strong>1. Receive Webhook:</strong> <code>transfer.initiated</code><br>
-                <em>Action:</em> Parse payload. Extract <strong>both</strong> <code>transactionId</code> and <code>transferId</code> immediately.
-            </div>
-            <div class="step">
-                <strong>2. State Update:</strong> Update internal DB.<br>
-                <em>Action:</em> (Optional) Send <code>GET /v2/transfers/{transferId}</code> if extra metadata is needed.
-            </div>
-            <div class="step">
-                <strong>3. Receive Webhook 2:</strong> <code>transfer.completed</code><br>
-                <em>Action:</em> Parse payload. Extract <code>transferId</code>.
-            </div>
-            <div class="step">
-                <strong>4. Complete Workflow:</strong><br>
-                <em>Action:</em> Mark transfer as complete in local system. Zero reconciliation required.
+        <div class="app-container">
+            <div class="mobile-app">
+                <div class="app-header">Client App UI</div>
+                <div>Sending BTC to Vault</div>
+                <div class="amount">15.50 BTC</div>
+                <div class="success-icon">✓</div>
+                <div class="status-text">Transfer Complete!</div>
+                
+                <div class="unlocked-note">
+                    <strong>⚡ Instant UX:</strong> The app updates immediately because the webhook provides the exact transfer ID needed for correlation.
+                </div>
             </div>
         </div>
 
-        <div class="column backend-side">
-            <h2>Backend API</h2>
-            <div class="step">
-                <strong>1. Fire Webhook:</strong><br>
-                <em>Action:</em> Send updated payload containing <code>transactionId</code> AND <code>transferId</code>.
+        <div class="api-flow">
+            <h2 style="color: white; margin-top: 0;">Backend API Operations</h2>
+            
+            <div class="api-step">
+                <strong>1. Webhook Received:</strong> <code>transfer.initiated</code>
+                <span class="note">Payload includes BOTH {transactionId} & {transferId}. State updated instantly.</span>
             </div>
-            <div class="step">
-                <strong>2. Process Request (Light):</strong><br>
-                <em>Action:</em> If client requests metadata, serve a highly efficient, indexed point-lookup by ID.
+            <div class="api-step" style="border-left-color: #56b6c2;">
+                <strong>2. Client Request (Optional):</strong> <code>GET /v2/transfers/{transferId}</code>
+                <span class="note">Direct, lightweight point-lookup if extra metadata is needed. No list queries.</span>
             </div>
-            <div class="step">
-                <strong>3. Fire Webhook:</strong><br>
-                <em>Action:</em> Send updated payload containing <code>transactionId</code> AND <code>transferId</code>.
-            </div>
-            <div class="step">
-                <strong>4. No Action Required:</strong><br>
-                <em>Action:</em> Backend is completely free from unnecessary polling or heavy list queries.
+            <div class="api-step">
+                <strong>3. Webhook Received:</strong> <code>transfer.completed</code>
+                <span class="note">Payload includes {transferId}. Client marks transfer complete instantly.</span>
             </div>
         </div>
     </div>
 
     <div class="metrics">
-        <h2>Impact Metrics (Per 1,000 Transfers)</h2>
-        <ul>
-            <li><strong>Total API Requests:</strong> <span class="highlight">0 to 2,000 max</span> (Down from 4,000). Clients can rely fully on webhooks or do 1 direct lookup.</li>
-            <li><strong>Rate Limiting Impact:</strong> <span class="highlight">MINIMAL.</span> 100% reduction in heavy <code>GET /v2/transfers</code> queries. Massive improvement in database performance and client UX.</li>
-        </ul>
+        <h2>Infrastructure Impact (Per 1,000 Transfers)</h2>
+        <strong>API Requests:</strong> 0 to 2,000 max (Optional point-lookups only).<br>
+        <strong>Rate Limiting:</strong> Near zero risk. 100% reduction in heavy GET /v2/transfers queries. App is highly responsive.
     </div>
 
 </body>
